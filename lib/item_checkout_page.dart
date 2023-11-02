@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'models/product.dart';
+import 'package:kpostal/kpostal.dart';
 
 class ItemCheckoutPage extends StatefulWidget {
   const ItemCheckoutPage({super.key});
@@ -219,10 +220,41 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
   Widget receiverZipTextField() {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: receiverZipController,
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "우편번호"),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              readOnly: true,
+              controller: receiverZipController,
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(), hintText: "우편번호"),
+            ),
+          ),
+          const SizedBox(width: 15),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return KpostalView(callback: (Kpostal result) {
+                      receiverZipController.text = result.postCode;
+                      receiverAddress1Controller.text = result.address;
+                    });
+                  },
+                ),
+              );
+            },
+            style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 22),
+              child: Text('우편번호 찾기'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -231,6 +263,7 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: TextFormField(
+        readOnly: true,
         controller: receiverAddress1Controller,
         maxLines: 1, // 추가
         decoration: const InputDecoration(
