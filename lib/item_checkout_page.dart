@@ -288,6 +288,7 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: TextFormField(
+        obscureText: true,
         controller: userPwdController,
         maxLines: 1, // 추가
         decoration: const InputDecoration(
@@ -300,6 +301,7 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: TextFormField(
+        obscureText: true,
         controller: userConfirmPwdController,
         maxLines: 1, // 추가
         decoration: const InputDecoration(
@@ -324,6 +326,7 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: TextFormField(
+        maxLength: 10,
         controller: cardAuthController,
         maxLines: 1, // 추가
         decoration: const InputDecoration(
@@ -348,8 +351,9 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: TextFormField(
+        obscureText: true,
+        maxLength: 2,
         controller: cardPwdTwoDigitsController,
-        maxLines: 1, // 추가
         decoration: const InputDecoration(
             border: OutlineInputBorder(), hintText: "카드 비밀번호 앞2자리"),
       ),
