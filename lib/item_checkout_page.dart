@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'item_order_result_page.dart';
 import 'models/product.dart';
 import 'package:kpostal/kpostal.dart';
+import '../components/basic_dialog.dart';
 
 class ItemCheckoutPage extends StatefulWidget {
   const ItemCheckoutPage({super.key});
@@ -33,6 +35,8 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
   double totalPrice = 0; // 초기화를 안하면 에러
   final NumberFormat numberFormat = NumberFormat('###,###,###,###');
 
+  final formKey = GlobalKey<FormState>(); // * 통합위젯 만들기 위한 것
+
   //! controller 변수 14개 추가
   final buyerNameController = TextEditingController();
   final buyerEamilController = TextEditingController();
@@ -48,6 +52,16 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
   final cardAuthController = TextEditingController();
   final cardExpiredDateController = TextEditingController();
   final cardPwdTwoDigitsController = TextEditingController();
+
+  final depositNameController = TextEditingController(); // *입금자 성명받아오기
+
+  //! 결제수단 옵션 선택 변수
+  static const List<String> paymentMethodList = [
+    '결제수단선택',
+    '카드결제',
+    '무통장입금',
+  ];
+  var selectedPaymentMethod = paymentMethodList.first; // * index번호로 정할 수도 있다.
 
   @override
   void initState() {
@@ -84,21 +98,70 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
                 );
               },
             ),
-            //입력폼 필드
-            buyerNameTextField(),
-            buyerEmailTextField(),
-            buyerPhoneTextField(),
-            receiverNameTextField(),
-            receiverPhoneTextField(),
-            receiverZipTextField(),
-            receiverAddress1TextField(),
-            receiverAddress2TextField(),
-            userPwdTextField(),
-            userConfirmPwdTextField(),
-            cardNoTextField(),
-            cardAuthTextField(),
-            cardExpiredDateTextField(),
-            cardPwdTwoDigitsTextField(),
+            //! 입력폼 필드
+            Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  //! 입력폼 필드
+                  inputTextField(
+                    controller: buyerNameController,
+                    hintText: "주문자명",
+                  ),
+                  inputTextField(
+                      controller: buyerEamilController, hintText: "주문자 이메일"),
+                  inputTextField(
+                      controller: buyerPhoneController, hintText: "주문자 핸드폰번호"),
+                  inputTextField(
+                      controller: receiverNameController, hintText: "받는사람 이름"),
+                  inputTextField(
+                      controller: receiverPhoneController,
+                      hintText: "받는사람 핸드폰번호"),
+
+                  receiverZipTextField(), //! 기존 것 그대로 사용한다.
+                  inputTextField(
+                      controller: receiverAddress1Controller,
+                      hintText: "받는사람 기본주소",
+                      readOnly: true),
+                  inputTextField(
+                      controller: receiverAddress2Controller,
+                      hintText: "받는사람 상세주소"),
+                  inputTextField(
+                    controller: userPwdController,
+                    hintText: "비회원 주문조회 비밀번호",
+                    obscureText: true,
+                  ),
+                  inputTextField(
+                      controller: userConfirmPwdController,
+                      hintText: "비회원 주문조회 비밀번호 확인",
+                      obscureText: true),
+                  paymentSelectDropdownButton(), //! dropdown 버튼
+                  if (selectedPaymentMethod == '카드결제') //여기서는 중괄호 못쓴다.
+                    // 앞에서 paymentSelectDropdownButton을 실행했으니,selectedPaymentMethod 인식된다.
+                    Column(
+                      children: [
+                        inputTextField(
+                            controller: cardNoController, hintText: "카드번호"),
+                        inputTextField(
+                            controller: cardAuthController,
+                            hintText: "카드명의자 주민번호앞자리 또는 사업자번호",
+                            maxLength: 10),
+                        inputTextField(
+                            controller: cardExpiredDateController,
+                            hintText: "카드 만료일(YYYYMM)",
+                            maxLength: 6),
+                        inputTextField(
+                            controller: cardPwdTwoDigitsController,
+                            hintText: "카드 비밀번호 앞2자리",
+                            maxLength: 2),
+                      ],
+                    ),
+                  if (selectedPaymentMethod == '무통장입금')
+                    inputTextField(
+                        controller: depositNameController, hintText: "입금자명"),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -106,7 +169,37 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
         padding: const EdgeInsets.all(20),
         child: FilledButton(
           child: Text('총 ${numberFormat.format(totalPrice)}원 결제하기'),
-          onPressed: () {},
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              if (selectedPaymentMethod == '결제수단선택') {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true, //다이얼로그 창 밖으로 못 나가게 방지
+                  builder: (context) {
+                    return BasicDialog(
+                      content: "결제수단을 선택해 주세요.",
+                      buttonText: '닫기',
+                      buttonFunction: () => Navigator.of(context).pop(),
+                    );
+                  },
+                );
+              }
+              // '기타 결제 수단'인 경우
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) {
+                  return ItemOrderResultPage(
+                    paymentMethod: selectedPaymentMethod,
+                    paymentAmount: totalPrice,
+                    receiverName: receiverNameController.text,
+                    receiverPhone: receiverPhoneController.text,
+                    zip: receiverZipController.text,
+                    address1: receiverAddress1Controller.text,
+                    address2: receiverAddress2Controller.text,
+                  );
+                },
+              ));
+            }
+          },
         ),
       ),
     );
@@ -157,62 +250,37 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     );
   }
 
-  Widget buyerNameTextField() {
+  Widget inputTextField({
+    //! 아래 함수들 통합 함수 //
+    required TextEditingController controller,
+    required String hintText,
+    int? maxLength, // * 비밀번호 및 사업자번호 (?는 널값 허용)
+    bool obscureText = false, // 옵션인데 초기값을 넣어주면 ? 필요없다. 값이 있으니,
+    bool readOnly = false, // obscure,readOnly 값은 인자로 안 넣을 수도 있다는 것
+  }) {
     return Padding(
       padding: const EdgeInsets.all(8),
       child: TextFormField(
-        controller: buyerNameController,
+        controller: controller,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return "내용을 입력해 주세요."; //이때 return은 알아서 칸에 출력된다.
+          } else {
+            if (controller == userConfirmPwdController &&
+                userPwdController.text != userConfirmPwdController.text) {
+              return "비밀번호가 일치하지 않습니다.";
+            }
+          }
+          return null; //* 아무이상없을 때 null리턴. 만약 null리턴안하면 validator못 빠져나옴
+        },
         maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "주문자명"),
-      ),
-    );
-  }
-
-  Widget buyerEmailTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: buyerEamilController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "주문자 이메일"),
-      ),
-    );
-  }
-
-  Widget buyerPhoneTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: buyerPhoneController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "주문자 휴대전화"),
-      ),
-    );
-  }
-
-  Widget receiverNameTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: receiverNameController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "받는 사람 이름"),
-      ),
-    );
-  }
-
-  Widget receiverPhoneTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: receiverPhoneController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "받는 사람 휴대전화"),
+        maxLength: maxLength,
+        obscureText: obscureText,
+        readOnly: readOnly,
+        decoration: InputDecoration(
+          border: const OutlineInputBorder(),
+          hintText: hintText,
+        ),
       ),
     );
   }
@@ -259,103 +327,30 @@ class _ItemCheckoutPageState extends State<ItemCheckoutPage> {
     );
   }
 
-  Widget receiverAddress1TextField() {
-    return Padding(
+  Widget paymentSelectDropdownButton() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        readOnly: true,
-        controller: receiverAddress1Controller,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "기본 주소"),
+      decoration: BoxDecoration(
+        border: Border.all(width: 0.5), // 디폴트 1.0이다.
+        borderRadius: BorderRadius.circular(4),
       ),
-    );
-  }
-
-  Widget receiverAddress2TextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: receiverAddress2Controller,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "상세 주소"),
-      ),
-    );
-  }
-
-  Widget userPwdTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        obscureText: true,
-        controller: userPwdController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "비회원 주문조회 비밀번호"),
-      ),
-    );
-  }
-
-  Widget userConfirmPwdTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        obscureText: true,
-        controller: userConfirmPwdController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "비회원 주문조회 비밀번호 확인"),
-      ),
-    );
-  }
-
-  Widget cardNoTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: cardNoController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "카드번호"),
-      ),
-    );
-  }
-
-  Widget cardAuthTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        maxLength: 10,
-        controller: cardAuthController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "카드명의자 주민번호 앞자리"),
-      ),
-    );
-  }
-
-  Widget cardExpiredDateTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        controller: cardExpiredDateController,
-        maxLines: 1, // 추가
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "카드 만료일"),
-      ),
-    );
-  }
-
-  Widget cardPwdTwoDigitsTextField() {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: TextFormField(
-        obscureText: true,
-        maxLength: 2,
-        controller: cardPwdTwoDigitsController,
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(), hintText: "카드 비밀번호 앞2자리"),
+      child: DropdownButton<String>(
+        value: selectedPaymentMethod,
+        onChanged: (value) {
+          setState(() {
+            selectedPaymentMethod = value ?? "";
+          });
+        },
+        underline: Container(),
+        isExpanded: true,
+        items: paymentMethodList.map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
       ),
     );
   }
