@@ -1,9 +1,9 @@
 class Order {
   int? orderId;
-  int? orderNo;
   int? productNo;
   int? quantity;
   double? totalPrice;
+  String? orderNo;
   String? orderDate;
   String? paymentStatus;
   String? deliveryStatus;
