@@ -1,8 +1,8 @@
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:shoppingmall/constants.dart';
 import 'package:shoppingmall/item_checkout_page.dart';
-
 import 'models/product.dart';
 
 class ItemBasketPage extends StatefulWidget {
@@ -13,12 +13,24 @@ class ItemBasketPage extends StatefulWidget {
 }
 
 class _ItemBasketPageState extends State<ItemBasketPage> {
-  List<Product> basketList = [
+  List<Product> productList = [
     Product(
       productNo: 1,
-      productName: '노트북(Laptop)',
+      productName: "노트북(Laptop)",
       productImageUrl: "https://picsum.photos/id/1/300/300",
       price: 600000,
+    ),
+    Product(
+      productNo: 2,
+      productName: "스마트폰(Phone)",
+      productImageUrl: "https://picsum.photos/id/20/300/300",
+      price: 500000,
+    ),
+    Product(
+      productNo: 3,
+      productName: "머그컵(Cup)",
+      productImageUrl: "https://picsum.photos/id/30/300/300",
+      price: 15000,
     ),
     Product(
       productNo: 4,
@@ -26,22 +38,36 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
       productImageUrl: "https://picsum.photos/id/60/300/300",
       price: 50000,
     ),
+    Product(
+      productNo: 5,
+      productName: "포도(Grape)",
+      productImageUrl: "https://picsum.photos/id/75/200/300",
+      price: 75000,
+    ),
+    Product(
+      productNo: 6,
+      productName: "책(book)",
+      productImageUrl: "https://picsum.photos/id/24/200/300",
+      price: 50000,
+    ),
   ];
-  List<Map<int, int>> quantityList = [
-    {1: 2},
-    {4: 3}
-  ];
+
   double totalPrice = 0; // 초기화를 안하면 에러
-  final NumberFormat numberFormat = NumberFormat('###,###,###,###');
+  Map<String, dynamic> cartMap = {};
 
   @override
   void initState() {
     super.initState();
-    for (var i = 0; i < basketList.length; i++) {
-      totalPrice +=
-          basketList[i].price! * quantityList[i][basketList[i].productNo]!;
-      // 여기서 주의할 점은 quantaityList[i][productNo]가 안된다.
-      // productNo는 basketList[i]를 통해서 접근이 가능하다.
+    //! 저장한 장바구니 리스트 가져오기
+    cartMap = json.decode(sharedP.getString('cartMap') ?? "{}") ?? {};
+
+    //! 총액 계산
+    for (int i = 0; i < cartMap.length; i++) {
+      totalPrice += productList
+              .firstWhere(
+                  (el) => el.productNo == int.parse(cartMap.keys.elementAt(i)))
+              .price! *
+          cartMap[cartMap.keys.elementAt(i)];
     }
   }
 
