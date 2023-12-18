@@ -60,8 +60,11 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
     super.initState();
     //! 저장한 장바구니 리스트 가져오기
     cartMap = json.decode(sharedP.getString('cartMap') ?? "{}") ?? {};
+  }
 
+  double calculateTotalPrice() {
     //! 총액 계산
+    totalPrice = 0; //! 항상 계산전에 0으로 초기화
     for (int i = 0; i < cartMap.length; i++) {
       totalPrice += productList
               .firstWhere(
@@ -69,6 +72,7 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
               .price! *
           cartMap[cartMap.keys.elementAt(i)];
     }
+    return totalPrice;
   }
 
   @override
@@ -79,21 +83,26 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
         centerTitle: true,
       ),
       body: ListView.builder(
-        itemCount: basketList.length,
+        itemCount: cartMap.length,
         itemBuilder: (context, i) {
+          int productNo = int.parse(cartMap.keys.elementAt(i));
+          //{"2": 1, "1":2, "3":2} 하나씩 뽑는다. "2", "1", "3"
+          Product currentProduct = productList.firstWhere((el) {
+            return el.productNo == productNo; //이 조건 만족하는 첫번째 el 반환
+          });
           return basketContainer(
-            productNo: basketList[i].productNo ?? 0,
-            productName: basketList[i].productName ?? "",
-            productImageUrl: basketList[i].productImageUrl ?? "",
-            price: basketList[i].price ?? 0,
-            quantity: quantityList[i][basketList[i].productNo] ?? 0,
+            productNo: productNo,
+            productName: currentProduct.productName!,
+            productImageUrl: currentProduct.productImageUrl!,
+            price: currentProduct.price!,
+            quantity: cartMap[productNo.toString()],
           );
         },
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(20),
         child: FilledButton(
-          child: Text('총 ${numberFormat.format(totalPrice)}원 결제하기'),
+          child: Text('총 ${numberFormat.format(calculateTotalPrice())}원 결제하기'),
           onPressed: () {
             // 결제시작 페이지로 이동
             Navigator.of(context).push(MaterialPageRoute(builder: (context) {
@@ -120,6 +129,7 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
           CachedNetworkImage(
             imageUrl: productImageUrl,
             width: MediaQuery.of(context).size.width * 0.41,
+            height: 130,
             fit: BoxFit.cover,
             placeholder: (context, url) {
               return const Center(
@@ -145,15 +155,38 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
                     children: [
                       const Text('수량'),
                       IconButton(
-                          icon: const Icon(Icons.remove), onPressed: () {}),
+                          icon: const Icon(Icons.remove),
+                          onPressed: () {
+                            //! 수량줄이기(1 초과시에만 감소시킬 수 있음)
+                            if (cartMap[productNo.toString()] > 1) {
+                              setState(() {
+                                cartMap[productNo.toString()]--;
+                                //! 변화된 cartMap을 디스크에 반영
+                                sharedP.setString(
+                                    'cartMap', json.encode(cartMap));
+                              });
+                            }
+                          }),
                       Text('$quantity'),
                       IconButton(
                         icon: const Icon(Icons.add),
-                        onPressed: () {},
+                        onPressed: () {
+                          setState(() {
+                            //! 실전에서는 재고사항도 고려해야 된다. 무조건 증가만 못한다...여기서는 생략
+                            cartMap[productNo.toString()]++;
+                            sharedP.setString('cartMap', json.encode(cartMap));
+                          });
+                        },
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete),
-                        onPressed: () {},
+                        onPressed: () {
+                          setState(() {
+                            //! 장바구니에서 해당 제품 제거
+                            cartMap.remove(productNo.toString());
+                            sharedP.setString('cartMap', json.encode(cartMap));
+                          });
+                        },
                       ),
                     ],
                   ),
