@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shoppingmall/constants.dart';
 import 'item_list_page.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   initializeSharedPreferences();
   runApp(const MyApp());
 }
