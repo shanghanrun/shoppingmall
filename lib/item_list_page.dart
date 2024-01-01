@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shoppingmall/constants.dart';
 import 'package:shoppingmall/item_basket_page.dart';
 import 'package:shoppingmall/item_details_page.dart';
 import 'package:shoppingmall/my_order_list_page.dart';
 import 'models/product.dart';
-import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'product_list.dart' as pl;
+// import 'product_list.dart' as pl;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ItemListPage extends StatefulWidget {
   const ItemListPage({super.key});
@@ -15,8 +16,12 @@ class ItemListPage extends StatefulWidget {
 }
 
 class _ItemListPageState extends State<ItemListPage> {
-  final NumberFormat numberFormat = NumberFormat('###,###,###,###');
-  List<Product> productList = pl.productList; // 서로 다른 이름을 사용해야 된다.
+  // List<Product> productList = pl.productList; // 서로 다른 이름을 사용해야 된다.
+  final productListRef = FirebaseFirestore.instance
+      .collection('products')
+      .withConverter(
+          fromFirestore: (snapshot, _) => Product.fromJson(snapshot.data()!),
+          toFirestore: (product, _) => product.toJson());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,21 +47,31 @@ class _ItemListPageState extends State<ItemListPage> {
                 }),
           ],
         ),
-        body: GridView.builder(
-            itemCount: productList.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, childAspectRatio: 0.8), //세로10 가로 8
-            itemBuilder: (context, i) {
-              return productContainer(
-                productNo: productList[i].productNo ?? 0,
-                productName: productList[i].productName ?? "",
-                //요소가 Product클래스라서 .productName 가능하다.
-                //그런데, 널문제로 productList[i].productName! 할 수도 있지만
-                //그러면, 반드시 있어야 될 값이 되는데, 만약 값이 안들어오면 런타임에러가 발생된다.
-                productImageUrl: productList[i].productImageUrl ?? "",
-                price: productList[i].price ?? 0,
-                //String에 대해서는 ""로 하고, 숫자는 0
-              );
+        body: StreamBuilder(
+            stream: productListRef.orderBy('productNo').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return GridView(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2, childAspectRatio: 0.8),
+                  children: snapshot.data!.docs
+                      .map((doc) => productContainer(
+                            productNo: doc.data().productNo ?? 0,
+                            productName: doc.data().productName ?? "",
+                            productImageUrl: doc.data().productImageUrl ?? "",
+                            price: doc.data().price ?? 0,
+                          ))
+                      .toList(),
+                );
+              } else if (snapshot.hasError) {
+                return const Center(
+                  child: Text('오류가 발생했습니다.'),
+                );
+              } else {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
             }));
   }
 
