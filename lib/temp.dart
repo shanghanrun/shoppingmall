@@ -139,10 +139,9 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(width: 10),
           CachedNetworkImage(
             imageUrl: productImageUrl,
-            width: MediaQuery.of(context).size.width * 0.32,
+            width: MediaQuery.of(context).size.width * 0.41,
             height: 130,
             fit: BoxFit.cover,
             placeholder: (context, url) {
@@ -212,3 +211,4 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
     );
   }
 }
+
