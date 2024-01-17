@@ -79,7 +79,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
 
   Container productPriceContainer() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(
         '${numberFormat.format(widget.price)}원', // 숫자라서 문자''로 바꾸어야 된다.
         textScaleFactor: 1.3, // 폰트사이지 몇배
@@ -89,7 +89,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
 
   Container productNameContainer() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(widget.productName,
           textScaleFactor: 1.5, // 폰트사이지 몇배
           style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -102,6 +102,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
       padding: const EdgeInsets.all(15),
       child: CachedNetworkImage(
           width: MediaQuery.of(context).size.width * 0.8,
+          height: 300,
           fit: BoxFit.cover, // 이미지가 크게 나온다.
           imageUrl: widget.productImageUrl, //stf클래스와 state클래스는 다르다.
           // 그래서 stf클래스의 변수값을 가져오려면, widget을 붙여야 된다.
@@ -117,13 +118,13 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
 
   Widget productQuantityContainer() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text("수량: "),
           IconButton(
-            icon: const Icon(Icons.remove, size: 24),
+            icon: const Icon(Icons.remove, size: 24, color: Colors.blue),
             onPressed: () {
               setState(() {
                 if (quantity > 1) {
@@ -132,9 +133,9 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
               });
             },
           ),
-          Text('$quantity'),
+          Text(' $quantity '),
           IconButton(
-            icon: const Icon(Icons.add, size: 24),
+            icon: const Icon(Icons.add, size: 24, color: Colors.blue),
             onPressed: () {
               setState(() {
                 quantity++;
@@ -153,7 +154,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            '총 상품금액',
+            '총 상품금액 ',
             textScaleFactor: 1.3,
             style: TextStyle(fontWeight: FontWeight.bold),
           ),

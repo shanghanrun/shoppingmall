@@ -169,7 +169,7 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
                     children: [
                       const Text('수량'),
                       IconButton(
-                          icon: const Icon(Icons.remove),
+                          icon: const Icon(Icons.remove, color: Colors.blue),
                           onPressed: () {
                             //! 수량줄이기(1 초과시에만 감소시킬 수 있음)
                             if (cartMap[productNo.toString()] > 1) {
@@ -183,7 +183,7 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
                           }),
                       Text('$quantity'),
                       IconButton(
-                        icon: const Icon(Icons.add),
+                        icon: const Icon(Icons.add, color: Colors.blue),
                         onPressed: () {
                           setState(() {
                             //! 실전에서는 재고사항도 고려해야 된다. 무조건 증가만 못한다...여기서는 생략
@@ -193,7 +193,7 @@ class _ItemBasketPageState extends State<ItemBasketPage> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete),
+                        icon: const Icon(Icons.delete, color: Colors.grey),
                         onPressed: () {
                           setState(() {
                             //! 장바구니에서 해당 제품 제거
